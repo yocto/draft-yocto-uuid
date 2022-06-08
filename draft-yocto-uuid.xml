@@ -1,12 +1,368 @@
-<rfc category="info" submissionType="independent">
+<rfc category="info" ipr="none" obsoletes="4122" submissionType="independent" version="3">
 	<front>
 		<title abbrev="UUID">Universally Unique IDentifier</title>
-		<author fullname="B.J. van Hartingsveldt">
-			<organization/>
+		<author fullname="B.J. van Hartingsveldt" initials="B.J." surname="van Hartingsveldt">
+			<organization>Yocto</organization>
 		</author>
 	</front>
 	<middle>
-		<section>
+		<section title="Introduction">
+			<t>This specification defines the formats of UUIDs (Universally Unique IDentifier), also known as GUIDs (Globally Unique IDentifier). The specification also registers a Uniform Resource Name namespace for the UUID. A UUID is 128 bits long, and requires no central registration process.</t>
+		</section>
+		<section title="Motivation">
+			<t>One of the main reasons for using UUIDs is that no centralized authority is required to administer them. As a result, generation on demand can be completely automated, and used for a variety of purposes. The UUID generation algorithm described here supports very high allocation rates of up to 10 million per second per machine if necessary, so that they could even be used as transaction IDs.</t>
+			<t>UUIDs are of a fixed size (128 bits) which is reasonably small compared to other alternatives. This lends itself well to sorting, ordering, and hashing of all sorts, storing in databases, simple allocation, and ease of programming in general.</t>
+			<t>Since UUIDs are unique and persistent, they make excellent Uniform Resource Names. The unique ability to generate a new UUID without a registration process allows for UUIDs to be one of the URNs with the lowest minting cost.</t>
+		</section>
+		<section title="Specification">
+			<t>This section describes the UUID format on bit level. All UUIDs are 128 bits long.</t>
+			<section anchor="variants" title="Variants">
+				<t>The variant of an UUID is defined by one octet. At the moment, the following variants are used:</t>
+				<table>
+					<name>UUID Variant Registry</name>
+					<thead>
+						<tr>
+							<th>Bits</th>
+							<th>Values (hexadecimal)</th>
+							<th>Values (decimal)</th>
+							<th>Description</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr>
+							<td>0xxxxxxx</td>
+							<td>0x00 - 0x7F</td>
+							<td>0 - 127</td>
+							<td>Apollo Computer NCS (including Nil-UUID)</td>
+						</tr>
+						<tr>
+							<td>10xxxxxx</td>
+							<td>0x80 - 0xBF</td>
+							<td>128 - 191</td>
+							<td>Open Software Foundation DCE (including Alternating-UUID)</td>
+						</tr>
+						<tr>
+							<td>110xxxxx</td>
+							<td>0xC0 - 0xDF</td>
+							<td>192 - 223</td>
+							<td>Microsoft DCOM</td>
+						</tr>
+						<tr>
+							<td>111xxxxx (except 11111111)</td>
+							<td>0xE0 - 0xFE</td>
+							<td>224 - 254</td>
+							<td>Reserved</td>
+						</tr>
+						<tr>
+							<td>11111111</td>
+							<td>0xFF</td>
+							<td>255</td>
+							<td>Omni-UUID</td>
+						</tr>
+					</tbody>
+				</table>
+				<section title="Apollo Computer NCS">
+					<t>The UUID was first used by Apollo Computer for NCS. It had the following format:</t>
+					<figure>
+						<name>The legacy format</name>
+						<artwork>    
+ 0                   1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                           time_high                           |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|           time_low            |           reserved            |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|    family     |                                               |
++-+-+-+-+-+-+-+-+                     node                      |
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+    
+						</artwork>
+					</figure>
+					<ul>
+						<li>time_high (32 bits): The high part of the time.</li>
+						<li>time_low (16 bits): The low part of the time.</li>
+						<li>reserved (16 bits): Reserved. All zeros.</li>
+						<li>family (8 bits): Address family. Defines the type of address in the node field. See <xref target="families"/> for possible values.</li>
+						<li>node (56 bits): Node. Format defined by the family field.</li>
+					</ul>
+					<t>The 'family' field and and 'variant' field of <xref target="variants"/> are the same octet. The family field was specified to hold the values 0-255. However, because only the values 0-13 were used, it was decided that the values 0-127 were still legacy format, but the values 128-255 were used to define other UUID variants.</t>
+					
+				</section>
+				<section title="Open Software Foundation DCE">
+					<t>In RFC4122, a new variant was described in RFC4122 with some backward compatibility to the older format:</t>
+					<figure>
+						<name>The format in RFC4122.</name>
+						<artwork>    
+ 0                   1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                           time_low                            |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|           time_mid            |      time_hi_and_version      |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|clk_seq_hi_res |  clk_seq_low  |                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+             node              |
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+    
+						</artwork>
+					</figure>
+					<ul>
+						<li>time_low (32 bits): The low part of the time.</li>
+						<li>time_mid (16 bits): The mid part of the time.</li>
+						<li>time_hi_and_version (16 bits): The high part of the time multiplexed with the version.</li>
+						<li>clock_seq_hi_and_reserved (8 bits): The high part of the clock sequence multiplexed with variant.</li>
+						<li>clk_seq_low (8 bits): The low part of the clock sequence.</li>
+						<li>node (48 bits): Node.</li>
+					</ul>
+					<t>In this variant, the first two bits (10) identify the variant, the rest of 'clk_seq_hi_res' is used for the clock sequence. The first 4 bits of 'time_hi_and_version' define the version of the UUID. See for <xref target="versions"/> for possible versions. The remaining bits are used for time.</t>
+				</section>
+				<section title="Microsoft DCOM">
+					<t>The format of this variant isn't known at the moment.</t>
+				</section>
+				<section title="Omni-UUID">
+					<t>See <xref target="specialTypes-omni"/>.</t>
+				</section>
+			</section>
+			<section anchor="families" title="Address Families">
+				<t>The family field starts with a 0-bit if it is the legacy format and with a 1-bit if it describes another variant. This gives 7 bits to describe family addresses in the legacy format. The following families are described:</t>
+				<table>
+					<name>Address family list</name>
+					<thead>
+						<tr>
+							<th>Bits</th>
+							<th>Values (hexadecimal)</th>
+							<th>Values (decimal)</th>
+							<th>Description</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr>
+							<td>0000000</td>
+							<td>0x0</td>
+							<td>0</td>
+							<td>Unspecified (See 'AF_UNSPEC' or 'socket_$unspec')</td>
+						</tr>
+						<tr>
+							<td>0000001</td>
+							<td>0x1</td>
+							<td>1</td>
+							<td>Unix (See 'AF_UNIX' or 'socket_$unix')</td>
+						</tr>
+						<tr>
+							<td>0000010</td>
+							<td>0x2</td>
+							<td>2</td>
+							<td>Internet (See 'AF_INET' or 'socket_$internet')</td>
+						</tr>
+						<tr>
+							<td>0000011</td>
+							<td>0x3</td>
+							<td>3</td>
+							<td>ImpLink (See 'AF_IMPLINK' or 'socket_$implink')</td>
+						</tr>
+						<tr>
+							<td>0000101</td>
+							<td>0x4</td>
+							<td>4</td>
+							<td>PUP (See 'AF_PUP' or 'socket_$pup')</td>
+						</tr>
+						<tr>
+							<td>0000101</td>
+							<td>0x5</td>
+							<td>5</td>
+							<td>Chaos (See 'AF_CHAOS' or 'socket_$chaos')</td>
+						</tr>
+						<tr>
+							<td>0000110</td>
+							<td>0x6</td>
+							<td>6</td>
+							<td>NS (See 'AF_NS' or 'socket_$ns')</td>
+						</tr>
+						<tr>
+							<td>0000111</td>
+							<td>0x7</td>
+							<td>7</td>
+							<td>NBS (See 'AF_NBS' or 'socket_$nbs')</td>
+						</tr>
+						<tr>
+							<td>0001000</td>
+							<td>0x8</td>
+							<td>8</td>
+							<td>ECMA (See 'AF_ECMA' or 'socket_$ecma')</td>
+						</tr>
+						<tr>
+							<td>0001001</td>
+							<td>0x9</td>
+							<td>9</td>
+							<td>DataKit (See 'AF_DATAKIT' or 'socket_$datakit')</td>
+						</tr>
+						<tr>
+							<td>0001010</td>
+							<td>0xA</td>
+							<td>10</td>
+							<td>CCITT (See 'AF_CCITT' or 'socket_$ccitt')</td>
+						</tr>
+						<tr>
+							<td>0001011</td>
+							<td>0xB</td>
+							<td>11</td>
+							<td>SNA (See 'AF_SNA' or 'socket_$sna')</td>
+						</tr>
+						<tr>
+							<td>0001100</td>
+							<td>0xC</td>
+							<td>12</td>
+							<td>Unspecified 2 (See 'socket_$unspec2')</td>
+						</tr>
+						<tr>
+							<td>0001101</td>
+							<td>0xD</td>
+							<td>13</td>
+							<td>DDS (See 'socket_$dds')</td>
+						</tr>
+					</tbody>
+				</table>
+				<t>It seems that only address family 2 (Internet) and 13 (DDS) have been used in UUIDs.</t>
+			</section>
+			<section anchor="versions" title="Versions">
+				<t>The version of an UUID is defined by one nible (4 bits). At the moment, the following versions are used:</t>
+				<table>
+					<name>UUID Variant Registry</name>
+					<thead>
+						<tr>
+							<th>Bits</th>
+							<th>Values (hexadecimal)</th>
+							<th>Values (decimal)</th>
+							<th>Description</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr>
+							<td>0000</td>
+							<td>0x0</td>
+							<td>0</td>
+							<td>Reserved</td>
+						</tr>
+						<tr>
+							<td>0001</td>
+							<td>0x1</td>
+							<td>1</td>
+							<td>Time-based version</td>
+						</tr>
+						<tr>
+							<td>0010</td>
+							<td>0x2</td>
+							<td>2</td>
+							<td>DCE Security version</td>
+						</tr>
+						<tr>
+							<td>0011</td>
+							<td>0x3</td>
+							<td>3</td>
+							<td>Name-based version using MD5</td>
+						</tr>
+						<tr>
+							<td>0100</td>
+							<td>0x4</td>
+							<td>4</td>
+							<td>Random version</td>
+						</tr>
+						<tr>
+							<td>0101</td>
+							<td>0x5</td>
+							<td>5</td>
+							<td>Name-based version using SHA-1</td>
+						</tr>
+						<tr>
+							<td>0110</td>
+							<td>0x6</td>
+							<td>6</td>
+							<td>Time-based version with inverted time bits</td>
+						</tr>
+						<tr>
+							<td>0111</td>
+							<td>0x7</td>
+							<td>7</td>
+							<td>?</td>
+						</tr>
+						<tr>
+							<td>1000</td>
+							<td>0x8</td>
+							<td>8</td>
+							<td>?</td>
+						</tr>
+						<tr>
+							<td>1001</td>
+							<td>0x9</td>
+							<td>9</td>
+							<td>Reserved</td>
+						</tr>
+						<tr>
+							<td>1010</td>
+							<td>0xA</td>
+							<td>10</td>
+							<td>Alternating-UUID</td>
+						</tr>
+						<tr>
+							<td>1011 - 1111</td>
+							<td>0xB - 0xF</td>
+							<td>11 - 15</td>
+							<td>Reserved</td>
+						</tr>
+					</tbody>
+				</table>
+				<section title="Version 1 - Time-based version">
+					<t>TODO.</t>
+				</section>
+				<section title="Version 2 - DCE Security version">
+					<t>TODO.</t>
+				</section>
+				<section title="Version 3 - Name-based version using MD5">
+					<t>TODO.</t>
+				</section>
+				<section title="Version 4 - Random version">
+					<t>TODO.</t>
+				</section>
+				<section title="Version 5 - Name-based version using SHA-1">
+					<t>TODO.</t>
+				</section>
+				<section title="Version 6 - Time-based version with inverted time bits">
+					<t>TODO.</t>
+				</section>
+				<section title="Version 7 - ?">
+					<t>TODO.</t>
+				</section>
+				<section title="Version 8 - ?">
+					<t>TODO.</t>
+				</section>
+				<section title="Version 10 - Alternating-UUID">
+					<t>See <xref target="specialTypes-alternating"/>.</t>
+				</section>
+			</section>
+		</section>
+		<section title="Special types">
+			<t>There are three special types of UUIDs:</t>
+			<section anchor="specialTypes-nil" title="Nil-UUID">
+				<t>The Nil-UUID does have all the bits set to zero:</t>
+				<t>00000000-0000-0000-0000-000000000000</t>
+			</section>
+			<section anchor="specialTypes-alternating" title="Alternating-UUID">
+				<t>The Alternating-UUID has a repeating pattern of 1-bits followed by 0-bits:</t>
+				<t>AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA</t>
+			</section>
+			<section anchor="specialTypes-omni" title="Omni-UUID">
+				<t>The Onmi-UUID does have all the bits set to one:</t>
+				<t>FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF</t>
+			</section>
+		</section>
+		<section title="IANA Considerations">
+			<section title="UUID Variants">
+				<t>IANA maintains the list of UUID variants that can be used. See <xref target="variants"/> for the list.</t>
+			</section>
+			<section title="UUID Versions">
+				<t>IANA maintains the list of UUID versions that can be used. See <xref target="versions"/> for the list.</t>
+			</section>
 		</section>
 	</middle>
 </rfc>
