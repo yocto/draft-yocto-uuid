@@ -316,25 +316,72 @@
 					<t>TODO.</t>
 				</section>
 				<section title="Version 2 - DCE Security version">
-					<t>TODO.</t>
+					<t>The same as UUIDv1, but the first 32 bits of the time field (`time_low`) are used for the local identifier and `clk_seq_low` is used for the local domain. Because of this, the time field is 28 bits instead of 60 bits and the clock sequence field is 6 bits instead of 14 bits. At the moment there are 3 domains defined:</t>
+					<table>
+						<name>Local domains</name>
+						<thead>
+							<tr>
+								<th>Bits</th>
+								<th>Values (hexadecimal)</th>
+								<th>Values (decimal)</th>
+								<th>Stringname</th>
+								<th>Description</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td>0000000</td>
+								<td>0x00</td>
+								<td>0</td>
+								<td>person</td>
+								<td>Defines that the local identifier is a POSIX UID.</td>
+							</tr>
+						</tbody>
+						<tbody>
+							<tr>
+								<td>0000001</td>
+								<td>0x01</td>
+								<td>1</td>
+								<td>group</td>
+								<td>Defines that the local identifier is a POSIX GID.</td>
+							</tr>
+						</tbody>
+						<tbody>
+							<tr>
+								<td>0000010</td>
+								<td>0x02</td>
+								<td>2</td>
+								<td>org</td>
+								<td>Defines that the local identifier is an organization. POSIX doesn't define organizations, so definition of this domain is up to the developer.</td>
+							</tr>
+						</tbody>
+						<tbody>
+							<tr>
+								<td>0000011 - 1111111</td>
+								<td>0x03 - 0xFF</td>
+								<td>3 - 255</td>
+								<td>Reserved</td>
+							</tr>
+						</tbody>
+					</table>
 				</section>
 				<section title="Version 3 - Name-based version using MD5">
 					<t>TODO.</t>
 				</section>
 				<section title="Version 4 - Random version">
-					<t>TODO.</t>
+					<t>To generate an UUIDv4, make the first 2 bits of `clock_seq_hi_and_reserved` to 1 and 0 to set the variant and the first 4 bits of `time_hi_and_version` to `0100` to set the version. The other 122 bits are randomly generated.</t>
 				</section>
 				<section title="Version 5 - Name-based version using SHA-1">
 					<t>TODO.</t>
 				</section>
 				<section title="Version 6 - Time-based version with inverted time bits">
-					<t>TODO.</t>
+					<t>The same as UUIDv1, but all the time bits are inverted and the version is 6, not 1.</t>
 				</section>
-				<section title="Version 7 - ?">
-					<t>TODO.</t>
+				<section title="Version 7 - Epoch time-based version">
+					<t>To generate an UUIDv8, make the first 2 bits of `clock_seq_hi_and_reserved` to 1 and 0 to set the variant and the first 4 bits of `time_hi_and_version` to `0111` to set the version. The first 48 bits (`time_low` and `time_mid`) are the Epoch timestamp in miliseconds (`unix_ts_ms`). The other 74 bits are pseudo-random data to provide uniqueness.</t>
 				</section>
-				<section title="Version 8 - ?">
-					<t>TODO.</t>
+				<section title="Version 8 - Free-form version">
+					<t>To generate an UUIDv8, make the first 2 bits of `clock_seq_hi_and_reserved` to 1 and 0 to set the variant and the first 4 bits of `time_hi_and_version` to `1000` to set the version. The other 122 bits are custom data. It is similar with UUIDv4, where this data MUST be "random".</t>
 				</section>
 				<section title="Version 10 - Alternating-UUID">
 					<t>See <xref target="specialTypes-alternating"/>.</t>
