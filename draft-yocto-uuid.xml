@@ -408,7 +408,7 @@
 						<tr>
 							<td>6ba7b811-9dad-11d1-80b4-00c04fd430c8</td>
 							<td>URL</td>
-							<td><tt>https://example.com/somepage?parameter=vale#somehash</tt></td>
+							<td><tt>https://example.com/somepage?parameter=value#somehash</tt></td>
 						</tr>
 						<tr>
 							<td>6ba7b812-9dad-11d1-80b4-00c04fd430c8</td>
